@@ -44,6 +44,7 @@ const Login = () => {
             password,
           }
         );
+
         if (response.data.success) {
           setToken(response.data.token);
           localStorage.setItem("token", response.data.token);
@@ -52,6 +53,7 @@ const Login = () => {
         }
       }
     } catch (error) {
+      console.log("fdghf");
       console.log(error);
       toast.error(error.message);
     }
