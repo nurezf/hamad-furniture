@@ -1,45 +1,50 @@
-import React, { useEffect, useState } from 'react'
-import axios from 'axios'
-import { backendUrl, currency } from '../App'
-import { toast } from 'react-toastify'
-import { assets } from '../assets/assets'
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { backendUrl, currency } from "../App";
+import { toast } from "react-toastify";
+import { assets } from "../assets/assets";
 
 const Orders = ({ token }) => {
-  const [orders, setOrders] = useState([])
+  const [orders, setOrders] = useState([]);
 
   const fetchAllOrders = async () => {
-    if (!token) return
+    if (!token) return;
 
     try {
-      const response = await axios.post(backendUrl + '/api/order/list', {}, { headers: { token } })
+      const response = await axios.post(
+        backendUrl + "/api/order/list",
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       if (response.data.success) {
-        setOrders(response.data.orders.reverse())
+        setOrders(response.data.orders.reverse());
       } else {
-        toast.error(response.data.message)
+        toast.error(response.data.message);
       }
     } catch (error) {
-      toast.error(error.message)
+      console.error("Error fetching orders:", error);
+      toast.error(error.message);
     }
-  }
+  };
 
   const statusHandler = async (event, orderId) => {
     try {
       const response = await axios.post(
-        backendUrl + '/api/order/status',
+        backendUrl + "/api/order/status",
         { orderId, status: event.target.value },
-        { headers: { token } }
-      )
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       if (response.data.success) {
-        await fetchAllOrders()
+        await fetchAllOrders();
       }
     } catch (error) {
-      toast.error("Failed to update status")
+      toast.error("Failed to update status");
     }
-  }
+  };
 
   useEffect(() => {
-    fetchAllOrders()
-  }, [token])
+    fetchAllOrders();
+  }, [token]);
 
   return (
     <div className="p-4 md:p-8">
@@ -51,22 +56,35 @@ const Orders = ({ token }) => {
             className="bg-white shadow-lg rounded-2xl p-6 border border-gray-100 transition hover:shadow-2xl"
           >
             <div className="grid grid-cols-1 sm:grid-cols-[50px_1fr] gap-4">
-              <img className="w-12 h-12 object-contain" src={assets.parcel_icon} alt="Parcel" />
+              <img
+                className="w-12 h-12 object-contain"
+                src={assets.parcel_icon}
+                alt="Parcel"
+              />
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-x-2 text-sm font-medium text-gray-700">
                   {order.items.map((item, idx) => (
                     <p key={idx}>
-                      {item.name} x {item.quantity}{' '}
-                      <span className="text-xs font-normal text-gray-500">({item.size})</span>
-                      {idx < order.items.length - 1 && ','}
+                      {item.name} x {item.quantity}{" "}
+                      <span className="text-xs font-normal text-gray-500">
+                        ({item.size})
+                      </span>
+                      {idx < order.items.length - 1 && ","}
                     </p>
                   ))}
                 </div>
 
                 <div className="mt-2">
-                  <p className="font-semibold">{order.address.firstName} {order.address.lastName}</p>
-                  <p>{order.address.street}, {order.address.city}, {order.address.state}</p>
-                  <p>{order.address.country} - {order.address.zipcode}</p>
+                  <p className="font-semibold">
+                    {order.address.firstName} {order.address.lastName}
+                  </p>
+                  <p>
+                    {order.address.street}, {order.address.city},{" "}
+                    {order.address.state}
+                  </p>
+                  <p>
+                    {order.address.country} - {order.address.zipcode}
+                  </p>
                   <p className="text-sm text-gray-600">{order.address.phone}</p>
                 </div>
               </div>
@@ -77,13 +95,22 @@ const Orders = ({ token }) => {
                 <p>
                   🛒 Quantity:{" "}
                   <span className="font-semibold">
-                    {order.items.reduce((total, item) => total + item.quantity, 0)}
+                    {order.items.reduce(
+                      (total, item) => total + item.quantity,
+                      0
+                    )}
                   </span>
                 </p>
                 <p>
                   🧾 Payment:{" "}
-                  <span className={order.payment ? 'text-green-600 font-medium' : 'text-red-500 font-medium'}>
-                    {order.payment ? 'Done' : 'Pending'}
+                  <span
+                    className={
+                      order.payment
+                        ? "text-green-600 font-medium"
+                        : "text-red-500 font-medium"
+                    }
+                  >
+                    {order.payment ? "Done" : "Pending"}
                   </span>
                 </p>
               </div>
@@ -92,10 +119,18 @@ const Orders = ({ token }) => {
                 <p>📅 Date: {new Date(order.date).toLocaleDateString()}</p>
               </div>
               <div>
-                <p>💰 Total: <span className="font-bold">{currency}{order.amount}</span></p>
+                <p>
+                  💰 Total:{" "}
+                  <span className="font-bold">
+                    {currency}
+                    {order.amount}
+                  </span>
+                </p>
               </div>
               <div>
-                <label className="block mb-1 font-medium text-gray-700">Status:</label>
+                <label className="block mb-1 font-medium text-gray-700">
+                  Status:
+                </label>
                 <select
                   onChange={(event) => statusHandler(event, order._id)}
                   value={order.status}
@@ -113,7 +148,7 @@ const Orders = ({ token }) => {
         ))}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Orders
+export default Orders;
