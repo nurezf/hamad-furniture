@@ -4,6 +4,7 @@ import cloudinary from "../config/cloudinary.js";
 import productModel from "../models/productModel.js";
 
 // Add product
+// Add product
 const addProduct = async (req, res) => {
   try {
     const { name, description, category, subCategory, colors, quantity } =
@@ -22,21 +23,39 @@ const addProduct = async (req, res) => {
         .json({ success: false, message: "Missing required fields." });
     }
 
+    // Defensive check for multer input structure
     const imageFiles = [
-      ...(req.files.image1 || []),
-      ...(req.files.image2 || []),
-      ...(req.files.image3 || []),
-      ...(req.files.image4 || []),
+      ...(req.files?.image1 || []),
+      ...(req.files?.image2 || []),
+      ...(req.files?.image3 || []),
+      ...(req.files?.image4 || []),
     ];
 
-    // const imagesUrl = await Promise.all(
-    //   imageFiles.map(async (file) => {
-    //     const result = await cloudinary.uploader.upload(file.path, {
-    //       resource_type: "image",
-    //     });
-    //     return result.secure_url;
-    //   })
-    // );
+    console.log("Received image files:", imageFiles);
+
+    // Validate presence of files before uploading
+    if (imageFiles.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "At least one image is required." });
+    }
+
+    const imagesUrl = await Promise.all(
+      imageFiles.map(async (file) => {
+        if (!file?.path) {
+          throw new Error(
+            "File path is missing for one of the uploaded images."
+          );
+        }
+
+        const result = await cloudinary.uploader.upload(file.path, {
+          resource_type: "image",
+        });
+        return result.secure_url;
+      })
+    );
+
+    console.log("Uploaded image URLs:", imagesUrl);
 
     const parsedColors =
       typeof colors === "string" ? JSON.parse(colors) : colors;
@@ -48,8 +67,8 @@ const addProduct = async (req, res) => {
       subCategory,
       colors: parsedColors,
       quantity: parseInt(quantity),
+      image: imagesUrl,
       date: new Date(),
-      //   image: imagesUrl,
     };
 
     const product = new productModel(productData);
@@ -57,7 +76,7 @@ const addProduct = async (req, res) => {
 
     res.json({ success: true, message: "Product added successfully." });
   } catch (error) {
-    console.error("Error adding product:", error);
+    console.error("Error adding product:", error.message || error);
     res.status(500).json({ success: false, message: "Failed to add product." });
   }
 };

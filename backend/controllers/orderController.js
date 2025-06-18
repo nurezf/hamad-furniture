@@ -1,10 +1,10 @@
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import productModel from "../models/productModel.js";
-import Stripe from 'stripe';
-import razorpay from 'razorpay';
+import Stripe from "stripe";
+import razorpay from "razorpay";
 
-const currency = 'inr';
+const currency = "inr";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const razorpayInstance = new razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -18,13 +18,14 @@ const razorpayInstance = new razorpay({
 const placeOrder = async (req, res) => {
   try {
     const { userId, items, address } = req.body;
+    console.log(req.body);
 
     const orderData = {
       userId,
       items,
       address,
       date: Date.now(),
-      status: 'Pending'
+      status: "Pending",
     };
 
     const newOrder = new orderModel(orderData);
@@ -53,7 +54,7 @@ const placeOrderStripe = async (req, res) => {
       items,
       address,
       date: Date.now(),
-      status: 'Pending'
+      status: "Pending",
     };
 
     const newOrder = new orderModel(orderData);
@@ -72,11 +73,10 @@ const placeOrderStripe = async (req, res) => {
       success_url: `${origin}/verify?success=true&orderId=${newOrder._id}`,
       cancel_url: `${origin}/verify?success=false&orderId=${newOrder._id}`,
       line_items,
-      mode: 'payment',
+      mode: "payment",
     });
 
     res.json({ success: true, session_url: session.url });
-
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -115,13 +115,16 @@ const placeOrderRazorpay = async (req, res) => {
       items,
       address,
       date: Date.now(),
-      status: 'Pending'
+      status: "Pending",
     };
 
     const newOrder = new orderModel(orderData);
     await newOrder.save();
 
-    const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const totalAmount = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
 
     const options = {
       amount: totalAmount * 100,
@@ -136,7 +139,6 @@ const placeOrderRazorpay = async (req, res) => {
       }
       res.json({ success: true, order });
     });
-
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -152,13 +154,12 @@ const verifyRazorpay = async (req, res) => {
 
     const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id);
 
-    if (orderInfo.status === 'paid') {
+    if (orderInfo.status === "paid") {
       await userModel.findByIdAndUpdate(userId, { cartData: {} });
       res.json({ success: true, message: "Payment Successful" });
     } else {
-      res.json({ success: false, message: 'Payment Failed' });
+      res.json({ success: false, message: "Payment Failed" });
     }
-
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -198,12 +199,13 @@ const userOrders = async (req, res) => {
 const updateStatus = async (req, res) => {
   try {
     const { orderId, status } = req.body;
+    console.log(req.body);
 
     const order = await orderModel.findById(orderId);
-    if (!order) return res.json({ success: false, message: 'Order not found' });
+    if (!order) return res.json({ success: false, message: "Order not found" });
 
     // If status changes to Delivered and it wasn’t already delivered
-    if (status === 'Delivered' && order.status !== 'Delivered') {
+    if (status === "Delivered" && order.status !== "Delivered") {
       for (const item of order.items) {
         const product = await productModel.findOne({ name: item.name });
         if (product) {
@@ -216,8 +218,7 @@ const updateStatus = async (req, res) => {
     order.status = status;
     await order.save();
 
-    res.json({ success: true, message: 'Status Updated' });
-
+    res.json({ success: true, message: "Status Updated" });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -232,5 +233,5 @@ export {
   verifyRazorpay,
   allOrders,
   userOrders,
-  updateStatus
+  updateStatus,
 };

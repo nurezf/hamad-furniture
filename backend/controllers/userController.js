@@ -11,21 +11,24 @@ const createToken = (user) => {
   );
 };
 
+const createTokenCustomer = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET);
+};
+
 // Route for user login
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await userModel.find({ email });
+    const user = await userModel.findOne({ email });
 
     if (!user) {
       return res.json({ success: false, message: "User doesn't exists" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (isMatch) {
-      const token = createToken({ email: email, role: "customer" });
+      const token = createTokenCustomer(user._id);
       res.json({ success: true, token });
     } else {
       res.json({ success: false, message: "Invalid credentials" });
@@ -75,7 +78,7 @@ const registerUser = async (req, res) => {
 
     const user = await newUser.save();
 
-    const token = createToken({ email: email, role: "customer" });
+    const token = createTokenCustomer(user._id);
     res.json({ success: true, token });
   } catch (error) {
     console.log(error);
@@ -158,4 +161,18 @@ const adminRegister = async (req, res) => {
   }
 };
 
-export { loginUser, registerUser, adminLogin, adminRegister };
+const userProfile = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = new User.findOne({ email });
+    if (!user) {
+      return res.json({ success: false, message: "User doesn't exists" });
+    }
+
+    res.json({ success: true, user });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+export { loginUser, registerUser, adminLogin, adminRegister, userProfile };
